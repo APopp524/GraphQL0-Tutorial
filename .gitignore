@@ -1,1 +1,5 @@
-/node_modules
+/logfile
+
+.env
+
+node_modules/
