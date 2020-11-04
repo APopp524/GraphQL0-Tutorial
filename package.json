@@ -1,0 +1,22 @@
+{
+  "name": "GraphQL0-Tutorial",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/APopp524/GraphQL0-Tutorial.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/APopp524/GraphQL0-Tutorial/issues"
+  },
+  "homepage": "https://github.com/APopp524/GraphQL0-Tutorial#readme"
+}
