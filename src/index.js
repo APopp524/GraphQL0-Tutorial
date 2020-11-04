@@ -1,25 +1,55 @@
 import express from 'express';
-import { ApolloServer } from 'apollo-server-express';
-
+import cors from 'cors';
+import { ApolloServer, gql } from 'apollo-server-express';
+ 
 const app = express();
 
-const schema = GQ1`
-    type Query {
-        me: User
-    }
-        type User {
-            username: String!
-        }
-    `;
+app.use(cors());
+ 
+const schema = gql`
+  type Query {
+    users: [User!]
+    me: User
+    user(id: ID!): User
+  }
+ 
+  type User {
+    id: ID!
+    username: String!
+  }
+`;
 
-const resolvers = {
-    Query: {
-        me: () => {
-            return {
-                username: "Andrew Popp",
-            };
-        },
+let users = {
+    1: {
+        id: '1',
+        username: 'Andrew Popp',
     },
+    2: {
+        id: '2',
+        username: 'Dave Davids',
+    },
+};
+
+const me = users[1];
+ 
+const resolvers = {
+  Query: {
+    users: () => {
+        return Object.values(users);
+    },
+    user: (parent, { id }) => {
+        return users[id];
+    },
+    me: () => {
+        return me;
+    },
+  },
+
+  User: {
+      username: parent => {
+          return parent.username;
+      }
+  },
 };
 
 const data = {
@@ -30,11 +60,10 @@ const data = {
 
 const server = new ApolloServer({
     typeDefs: schema,
-    resolvers,
-});
-
-server.applyMiddleware({ app, path: '/graphq1' });
-
-app.listen({ port:8000 }, () => {
-    console.log('Apollo Server on https://localhost:8000/graphq1')
-});
+    resolvers, data
+  });
+   
+  server.applyMiddleware({ app, path: '/graphql' });
+   
+  app.listen({ port: 8000 }, () => {
+    console.log('Apollo Server on http://localhost:8000/graphql')});
