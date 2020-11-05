@@ -3,11 +3,13 @@ import cors from 'cors';
 import http from 'http';
 import jwt from 'jsonwebtoken';
 import express from 'express';
+import DataLoader from 'dataloader';
 import { ApolloServer,AuthenticationError } from 'apollo-server-express';
 
 import schema from './schema';
 import resolvers from './resolvers';
 import models, { sequelize } from './models';
+import loaders from './loaders';
 
 const app = express();
 
@@ -27,12 +29,12 @@ const getMe = async req => {
   }
 };
 
+const userLoader = new DataLoader(keys => batchUsers(keys, models));
+
 const server = new ApolloServer({
   typeDefs: schema,
   resolvers,
   formatError: error => {
-    // remove the internal sequelize error message
-    // leave only the important validation error
     const message = error.message
       .replace('SequelizeValidationError: ', '')
       .replace('Validation error: ', '');
@@ -46,6 +48,11 @@ const server = new ApolloServer({
     if (connection) {
       return {
         models,
+      loaders: {
+        user: new DataLoader(keys =>
+          loaders.user.batchUsers(keys, models),
+        ),
+      },
       };
     }
 
@@ -56,6 +63,12 @@ const server = new ApolloServer({
         models,
         me,
         secret: process.env.SECRET,
+        loaders: {
+          user: new DataLoader(keys =>
+            loaders.user.batchUsers(keys, models),
+          ),
+        },
+
       };
     }
   },

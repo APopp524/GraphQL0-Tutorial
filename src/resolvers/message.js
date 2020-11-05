@@ -41,7 +41,7 @@ export default {
       };
     },
     message: async (parent, { id }, { models }) => {
-      return await models.Message.findById(id);
+      return await models.Message.findByPk(id);
     },
   },
 
@@ -71,8 +71,8 @@ export default {
   },
 
   Message: {
-    user: async (message, args, { models }) => {
-      return await models.User.findById(message.userId);
+    user: async (message, args, { loaders }) => {
+      return await loaders.user.load(message.userId);
     },
   },
 
