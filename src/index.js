@@ -1,7 +1,8 @@
 import 'dotenv/config';
+import jwt from 'jsonwebtoken';
 import cors from 'cors';
 import express from 'express';
-import { ApolloServer } from 'apollo-server-express';
+import { ApolloServer, AuthenticationError } from 'apollo-server-express';
 
 import schema from './schema';
 import resolvers from './resolvers';
@@ -11,18 +12,31 @@ const app = express();
 
 app.use(cors());
 
+const getMe = async req => {
+  const token = req.headers['x-token'];
+ 
+  if (token) {
+    try {
+      return await jwt.verify(token, process.env.SECRET);
+    } catch (e) {
+      throw new AuthenticationError(
+        'Your session expired. Sign in again.',
+      );
+    }
+  }
+};
+
+
 const server = new ApolloServer({
   typeDefs: schema,
   resolvers,
   formatError: error => {
-    // remove the internal sequelize error message
-    // leave only the important validation error
     const message = error.message
       .replace('SequelizeValidationError: ', '')
       .replace('Validation error: ', '');
 
     return {
-      ...error,
+      error,
       message,
     };
   },
@@ -31,6 +45,15 @@ const server = new ApolloServer({
     me: await models.User.findByLogin('apopp524'),
     secret: process.env.SECRET,
   }),
+  context: async ({ req }) => {
+    const me = await getMe(req);
+ 
+    return {
+      models,
+      me,
+      secret: process.env.SECRET,
+    };
+  },
 });
 
 server.applyMiddleware({ app, path: '/graphql' });
@@ -52,6 +75,7 @@ const createUsersWithMessages = async () => {
     {
       username: 'apopp524',
       email: 'example@email.com',
+      role: 'ADMIN',
       password: 'password',
       messages: [
         {
