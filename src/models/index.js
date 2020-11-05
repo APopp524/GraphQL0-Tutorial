@@ -1,5 +1,11 @@
 import Sequelize from 'sequelize';
 
+let sequelize;
+if (process.env.DATABASE_URL) {
+  sequelize = new Sequelize(process.env.DATABASE_URL, {
+    dialect: 'postgres',
+  });
+} else {
 const sequelize = new Sequelize(
   process.env.TEST_DATABASE || process.env.DATABASE,
   process.env.DATABASE_USER,
@@ -8,6 +14,7 @@ const sequelize = new Sequelize(
     dialect: 'postgres',
   },
 );
+}
 
 const models = {
   User: sequelize.import('./user'),
