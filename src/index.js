@@ -1,9 +1,10 @@
 import 'dotenv/config';
 import cors from 'cors';
+import http from 'http';
 import jwt from 'jsonwebtoken';
 import express from 'express';
-import { ApolloServer,AuthenticationError, } from 'apollo-server-express';
-import http from 'http';
+import { ApolloServer,AuthenticationError } from 'apollo-server-express';
+
 import schema from './schema';
 import resolvers from './resolvers';
 import models, { sequelize } from './models';
@@ -47,15 +48,16 @@ const server = new ApolloServer({
         models,
       };
     }
-    if (req) {
-    const me = await getMe(req);
 
-    return {
-      models,
-      me,
-      secret: process.env.SECRET,
-    };
-  }
+    if (req) {
+      const me = await getMe(req);
+
+      return {
+        models,
+        me,
+        secret: process.env.SECRET,
+      };
+    }
   },
 });
 
@@ -64,10 +66,10 @@ server.applyMiddleware({ app, path: '/graphql' });
 const httpServer = http.createServer(app);
 server.installSubscriptionHandlers(httpServer);
 
-const eraseDatabaseOnSync = true;
+const isTest = !!process.env.TEST_DATABASE;
 
-sequelize.sync({ force: eraseDatabaseOnSync }).then(async () => {
-  if (eraseDatabaseOnSync) {
+sequelize.sync({ force: isTest }).then(async () => {
+  if (isTest) {
     createUsersWithMessages(new Date());
   }
 
