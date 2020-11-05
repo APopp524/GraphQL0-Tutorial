@@ -1,8 +1,11 @@
 import 'dotenv/config';
-import jwt from 'jsonwebtoken';
 import cors from 'cors';
+import jwt from 'jsonwebtoken';
 import express from 'express';
-import { ApolloServer, AuthenticationError } from 'apollo-server-express';
+import {
+  ApolloServer,
+  AuthenticationError,
+} from 'apollo-server-express';
 
 import schema from './schema';
 import resolvers from './resolvers';
@@ -14,7 +17,7 @@ app.use(cors());
 
 const getMe = async req => {
   const token = req.headers['x-token'];
- 
+
   if (token) {
     try {
       return await jwt.verify(token, process.env.SECRET);
@@ -26,28 +29,24 @@ const getMe = async req => {
   }
 };
 
-
 const server = new ApolloServer({
   typeDefs: schema,
   resolvers,
   formatError: error => {
+    // remove the internal sequelize error message
+    // leave only the important validation error
     const message = error.message
       .replace('SequelizeValidationError: ', '')
       .replace('Validation error: ', '');
 
     return {
-      error,
+      ...error,
       message,
     };
   },
-  context: async () => ({
-    models,
-    me: await models.User.findByLogin('apopp524'),
-    secret: process.env.SECRET,
-  }),
   context: async ({ req }) => {
     const me = await getMe(req);
- 
+
     return {
       models,
       me,
@@ -62,7 +61,7 @@ const eraseDatabaseOnSync = true;
 
 sequelize.sync({ force: eraseDatabaseOnSync }).then(async () => {
   if (eraseDatabaseOnSync) {
-    createUsersWithMessages();
+    createUsersWithMessages(new Date());
   }
 
   app.listen({ port: 8000 }, () => {
@@ -70,16 +69,17 @@ sequelize.sync({ force: eraseDatabaseOnSync }).then(async () => {
   });
 });
 
-const createUsersWithMessages = async () => {
+const createUsersWithMessages = async date => {
   await models.User.create(
     {
       username: 'apopp524',
       email: 'example@email.com',
-      role: 'ADMIN',
       password: 'password',
+      role: 'ADMIN',
       messages: [
         {
           text: 'Published the Road to learn React',
+          createdAt: date.setSeconds(date.getSeconds() + 1),
         },
       ],
     },
@@ -96,9 +96,11 @@ const createUsersWithMessages = async () => {
       messages: [
         {
           text: 'Happy to release ...',
+          createdAt: date.setSeconds(date.getSeconds() + 1),
         },
         {
           text: 'Published a complete ...',
+          createdAt: date.setSeconds(date.getSeconds() + 1),
         },
       ],
     },
