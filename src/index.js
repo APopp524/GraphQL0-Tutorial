@@ -2,11 +2,8 @@ import 'dotenv/config';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
 import express from 'express';
-import {
-  ApolloServer,
-  AuthenticationError,
-} from 'apollo-server-express';
-
+import { ApolloServer,AuthenticationError, } from 'apollo-server-express';
+import http from 'http';
 import schema from './schema';
 import resolvers from './resolvers';
 import models, { sequelize } from './models';
@@ -44,7 +41,13 @@ const server = new ApolloServer({
       message,
     };
   },
-  context: async ({ req }) => {
+  context: async ({ req, connection }) => {
+    if (connection) {
+      return {
+        models,
+      };
+    }
+    if (req) {
     const me = await getMe(req);
 
     return {
@@ -52,10 +55,14 @@ const server = new ApolloServer({
       me,
       secret: process.env.SECRET,
     };
+  }
   },
 });
 
 server.applyMiddleware({ app, path: '/graphql' });
+
+const httpServer = http.createServer(app);
+server.installSubscriptionHandlers(httpServer);
 
 const eraseDatabaseOnSync = true;
 
@@ -64,7 +71,7 @@ sequelize.sync({ force: eraseDatabaseOnSync }).then(async () => {
     createUsersWithMessages(new Date());
   }
 
-  app.listen({ port: 8000 }, () => {
+  httpServer.listen({ port: 8000 }, () => {
     console.log('Apollo Server on http://localhost:8000/graphql');
   });
 });
