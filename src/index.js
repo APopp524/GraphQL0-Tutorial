@@ -2,9 +2,9 @@ import 'dotenv/config';
 import cors from 'cors';
 import http from 'http';
 import jwt from 'jsonwebtoken';
-import express from 'express';
 import DataLoader from 'dataloader';
-import { ApolloServer,AuthenticationError } from 'apollo-server-express';
+import express from 'express';
+import { ApolloServer,AuthenticationError, } from 'apollo-server-express';
 
 import schema from './schema';
 import resolvers from './resolvers';
@@ -29,9 +29,9 @@ const getMe = async req => {
   }
 };
 
-const userLoader = new DataLoader(keys => batchUsers(keys, models));
-
 const server = new ApolloServer({
+  introspection: true,
+  playground: true,
   typeDefs: schema,
   resolvers,
   formatError: error => {
@@ -48,11 +48,11 @@ const server = new ApolloServer({
     if (connection) {
       return {
         models,
-      loaders: {
-        user: new DataLoader(keys =>
-          loaders.user.batchUsers(keys, models),
-        ),
-      },
+        loaders: {
+          user: new DataLoader(keys =>
+            loaders.user.batchUsers(keys, models),
+          ),
+        },
       };
     }
 
@@ -68,7 +68,6 @@ const server = new ApolloServer({
             loaders.user.batchUsers(keys, models),
           ),
         },
-
       };
     }
   },
@@ -88,12 +87,8 @@ sequelize.sync({ force: isTest || isProduction }).then(async () => {
     createUsersWithMessages(new Date());
   }
 
-  httpServer.listen({port}, () => {
+  httpServer.listen({ port }, () => {
     console.log(`Apollo Server on http://localhost:${port}/graphql`);
-  })
-
-  httpServer.listen({ port: 8000 }, () => {
-    console.log('Apollo Server on http://localhost:8000/graphql');
   });
 });
 
